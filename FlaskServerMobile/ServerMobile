@@ -1,0 +1,77 @@
+from flask import Flask, request, jsonify, render_template
+import pymysql
+
+app = Flask(__name__)
+
+# Connect to the local MySQL database
+connection = pymysql.connect(
+    host='localhost',
+    user='root',  # Replace with your MySQL username
+    password='',  # Replace with your MySQL password
+    database='autopark',  # Replace with your database name
+    charset='utf8mb4',
+    cursorclass=pymysql.cursors.DictCursor
+)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/update_data', methods=['POST'])
+def update_data():
+    try:
+        # Get the data from the request body
+        data = request.json
+        id = data.get('id')
+        spotNumber = data.get('spotNumber')
+        isOccupied = data.get('isOccupied')
+
+        # Validate the data
+        if id is None or spotNumber is None or isOccupied is None:
+            return jsonify({'error': 'id, spotNumber and isOccupied are required'}), 400
+
+        with connection.cursor() as cursor:
+            # Get current occupiedParkingSpot value
+            sql = "SELECT occupiedParkingSpot FROM autopark WHERE id = %s"
+            cursor.execute(sql, (id,))
+            result = cursor.fetchone()
+            if result:
+                currentOccupied = result['occupiedParkingSpot']
+                newOccupied = currentOccupied + 1 if isOccupied else currentOccupied - 1
+
+                # Execute the SQL query to update the occupiedParkingSpot
+                sql = """
+                    UPDATE autopark
+                    SET occupiedParkingSpot = %s
+                    WHERE id = %s
+                """
+                cursor.execute(sql, (newOccupied, id))
+                connection.commit()
+            else:
+                return jsonify({'error': 'Invalid autopark id'}), 404
+
+        return jsonify({'message': 'Data updated successfully'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/read_data', methods=['GET'])
+def read_data():
+    try:
+        town = request.args.get('town')
+        if not town:
+            return jsonify({'error': 'Town parameter is required'}), 400
+
+        with connection.cursor() as cursor:
+            sql = "SELECT * FROM autopark WHERE town = %s"
+            cursor.execute(sql, (town,))
+            results = cursor.fetchall()
+            if results:
+                items = [{'id': row['id'], 'town': row['town'], 'autoparkName': row['autoparkName'], 'latitude': row['latitude'], 'longitude': row['longitude'], 'occupiedParkingSpot': row['occupiedParkingSpot'], 'maxCapacity': row['maxCapacity']} for row in results]
+                return jsonify({'data': items})
+            else:
+                return jsonify({'error': 'No items found for the specified town'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=80)
