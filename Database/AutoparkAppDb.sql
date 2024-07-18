@@ -1,10 +1,10 @@
--- Veritabanını oluşturma
+-- create the database
 CREATE DATABASE IF NOT EXISTS autopark;
 
--- Veritabanını kullanma
+-- use autopark
 USE autopark;
 
--- Tabloyu oluşturma
+-- create the table
 CREATE TABLE IF NOT EXISTS autopark (
     id INT AUTO_INCREMENT PRIMARY KEY,
     town VARCHAR(255) NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS autopark (
     maxCapacity INT NOT NULL
 );
 
--- Verileri ekleme
+-- insert the data
 INSERT INTO autopark (town, autoparkName, latitude, longitude, occupiedParkingSpot, maxCapacity) VALUES
 ('Kadıköy', 'Kadıköy Çarşı Otoparkı', 40.9872, 29.0280, 5, 10),
 ('Kadıköy', 'Kadıköy Rıhtım Otoparkı', 40.9842, 29.0218, 4, 10),
